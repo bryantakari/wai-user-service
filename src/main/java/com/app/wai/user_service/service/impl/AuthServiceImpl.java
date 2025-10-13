@@ -39,36 +39,57 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public BaseValueResponse<LoginDto> loginAccount(LoginRequest request) {
-        var userOpt = userService.getAccountByUsername(request.getUsername());
-        if (userOpt.isEmpty()) {
-            throw new ServiceException("Invalid password", ApplicationErrorCode.BAD_REQUEST);
-        }
-        var user = userOpt.get();
-        // 2. Check password (assuming plain text for demo, use BCrypt in real apps!)
+        Account user = userService.getAccountByUsername(request.getUsername())
+            .orElseThrow(() -> new ServiceException("Invalid username or password",
+                ApplicationErrorCode.BAD_REQUEST));
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new ServiceException("Invalid password", ApplicationErrorCode.BAD_REQUEST);
+            throw new ServiceException("Invalid username or password",
+                ApplicationErrorCode.BAD_REQUEST);
         }
 
-        JwtTokenDto jwtTokenDto = userMapper.mappingAccountToJwtDto(user);
-
-        LoginDto loginDto = new LoginDto();
-        loginDto.setToken(jwtHelper.generateToken(jwtTokenDto));
-        loginDto.setRefreshToken(jwtHelper.generateRefreshToken(jwtTokenDto));
-        return BaseValueResponse.<LoginDto>builder().data(loginDto).build();
+        return BaseValueResponse.<LoginDto>builder()
+            .data(generateLoginTokens(user))
+            .build();
     }
 
     @Override
     public BaseValueResponse<Boolean> validateToken() {
-        String authz = RequestUtils.getHeader("Authorization");
-        Optional<Claims> claimsOpt = jwtHelper.validateJwtToken(authz.replace("Bearer ", ""));
-        if(claimsOpt.isEmpty()){
-            throw new ServiceException("Token not valid",ApplicationErrorCode.UNAUTHORIZED);
+        String authHeader = RequestUtils.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new ServiceException("Missing Authorization header",
+                ApplicationErrorCode.UNAUTHORIZED);
         }
+
+        String token = authHeader.replace("Bearer ", "").trim();
+
+        jwtHelper.validateJwtToken(token).orElseThrow(
+            () -> new ServiceException("Token not valid", ApplicationErrorCode.UNAUTHORIZED));
+
         return BaseValueResponse.<Boolean>builder().data(true).build();
     }
 
     @Override
     public BaseValueResponse<LoginDto> refreshToken(String token) {
-        return null;
+        Optional<Claims> claimsOpt = jwtHelper.validateJwtToken(token);
+        if (claimsOpt.isEmpty()) {
+            throw new ServiceException("Refresh Token not valid",
+                ApplicationErrorCode.UNAUTHORIZED);
+        }
+        Claims userClaims = claimsOpt.get();
+        var user = userService.getAccountByUsername(userClaims.getSubject()).orElseThrow(
+            () -> new ServiceException("Invalid User", ApplicationErrorCode.BAD_REQUEST));
+
+
+        return BaseValueResponse.<LoginDto>builder().data(generateLoginTokens(user)).build();
+    }
+
+    private LoginDto generateLoginTokens(Account user) {
+        JwtTokenDto jwtTokenDto = userMapper.mappingAccountToJwtDto(user);
+
+        LoginDto loginDto = new LoginDto();
+        loginDto.setToken(jwtHelper.generateToken(jwtTokenDto));
+        loginDto.setRefreshToken(jwtHelper.generateRefreshToken(jwtTokenDto));
+        return loginDto;
     }
 }
