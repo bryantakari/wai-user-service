@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME}
+
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED}
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE}
+    baseline-version: ${SPRING_FLYWAY_BASELINE_VERSION:0}   # pick the version you want to start from
+    baseline-description: ${SPRING_FLYWAY_BASELINE_DESCRIPTION}
+    locations: classpath:db/migration
+
+app:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jwt:
+    secret: ${JWT_SECRET_TOKEN}
+    access-token-expiry-millis: ${JWT_ACCESS_TOKEN_EXPIRY_MILLIS}
+    refresh-token-expiry-millis: ${JWT_REFRESH_TOKEN_EXPIRY_MILLIS}
+
+logging:
+  pattern:
+    # Add trace and span to console logs (Micrometer uses traceId/spanId keys in MDC)
+    console: "%d{HH:mm:ss.SSS} %-5level traceId=%X{traceId:-} spanId=%X{spanId:-} [%thread] %logger - %msg%n"
+  level:
+    org:
+      flywaydb: DEBUG
