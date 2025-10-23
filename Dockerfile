@@ -14,5 +14,5 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/target/user-service-0.0.1-SNAPSHOT.jar user-service-0.0.1-SNAPSHOT.jar
 COPY ./opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
-EXPOSE 8080
+EXPOSE 8080 8443
 ENTRYPOINT ["java", "-javaagent:/otel/opentelemetry-javaagent.jar", "-jar", "user-service-0.0.1-SNAPSHOT.jar"]

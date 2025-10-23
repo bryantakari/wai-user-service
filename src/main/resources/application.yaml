@@ -9,6 +9,10 @@ spring:
     baseline-description: ${SPRING_FLYWAY_BASELINE_DESCRIPTION}
     locations: classpath:db/migration
 
+server:
+  http2:
+    enabled: true
+
 app:
   datasource:
     url: ${SPRING_DATASOURCE_URL}

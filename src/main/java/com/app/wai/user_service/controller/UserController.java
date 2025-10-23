@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -38,6 +39,7 @@ public class UserController {
     RegisterRequest request) {
         return new ResponseEntity<>(authService.registerAccount(request), HttpStatus.OK);
     }
+
     @PostMapping("/login")
     public ResponseEntity<BaseValueResponse<LoginDto>> loginAccount(@RequestBody
     LoginRequest request) {
@@ -48,5 +50,11 @@ public class UserController {
     public ResponseEntity<BaseValueResponse<Boolean>> validateToken() {
 
         return new ResponseEntity<>(authService.validateToken(), HttpStatus.OK);
+    }
+
+    @GetMapping("/refresh-token")
+    public ResponseEntity<BaseValueResponse<LoginDto>> loginAccount(
+        @RequestParam String refreshToken) {
+        return new ResponseEntity<>(authService.refreshToken(refreshToken), HttpStatus.OK);
     }
 }
